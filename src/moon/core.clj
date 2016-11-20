@@ -36,6 +36,34 @@
         (- century-key)
         (mod 30))))
 
+(def precision       (* 0.05 29))
+(def first-quartile  (* 0.25 29))
+(def full            (* 0.5  29))
+(def third-quartile  (* 0.75 29))
+;; Ummmmmmmm....
+;; There has got to be a better way to express this
+(def phase-names [`(0                             "new")
+                  `(~(- first-quartile precision) "waxing crescent")
+                  `(~(+ first-quartile precision) "first quarter")
+                  `(~(- full precision)           "waxing gibbous")
+                  `(~(+ full precision)           "full")
+                  `(~(- third-quartile precision) "waning gibbous")
+                  `(~(+ third-quartile precision) "last quarter")
+                  `(~(- 28 precision)             "waning crescent")])
+
+(defn phase-name
+  "Convert a moon age in days to a phase name"
+  [age]
+  (->> phase-names
+       (filter (fn [p] (>= age (first p))))
+       last
+       last))
+
+(defn phase-from-date
+  "Use Conways' approximation to get the phase of the moon on a given date"
+  [date]
+  (phase-name (conway-moon-age date)))
+
 (def date-fmt (clj-time.format/formatters :date))
 
 (defn read-dates
@@ -46,12 +74,10 @@
       (let [parts (split line #" ")
             date (clj-time.format/parse (first parts))
             expected-age (Double/parseDouble (last parts))
-            estimated-age (conway-moon-age date)]
-        ;; How do i modular
-        (when (and (> (Math/abs (- estimated-age expected-age)) 3)
-                   (< (Math/abs (- estimated-age expected-age)) 27))
-          (println (format "Failure at %s (%d vs %f)"
-                           date estimated-age expected-age)))))))
+            estimated-age (conway-moon-age date)
+            estimated-phase (phase-from-date date)]
+        (println (format "Phase on %s: %s"
+                         date estimated-phase))))))
 
 (defn -main
   "I don't do a whole lot ... yet."
