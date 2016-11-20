@@ -41,13 +41,19 @@
 (defn read-dates
   "Read some dates from a file"
   [path]
-  (use 'clojure.java.io)
   (with-open [rdr (reader path)]
     (doseq [line (line-seq rdr)]
-      (let [date-str (first (split line #" "))]
-        (println (conway-moon-age (clj-time.format/parse date-str)))))))
+      (let [parts (split line #" ")
+            date (clj-time.format/parse (first parts))
+            expected-age (Double/parseDouble (last parts))
+            estimated-age (conway-moon-age date)]
+        ;; How do i modular
+        (when (and (> (Math/abs (- estimated-age expected-age)) 3)
+                   (< (Math/abs (- estimated-age expected-age)) 27))
+          (println (format "Failure at %s (%d vs %f)"
+                           date estimated-age expected-age)))))))
 
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
-  (read-dates "expected_head.txt"))
+  (read-dates "expected.txt"))
